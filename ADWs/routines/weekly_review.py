@@ -6,7 +6,6 @@ Usage:
     python weekly_review.py --team    # Agent Team (parallel, higher token cost)
 """
 
-import sys
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from runner import run_claude, banner, summary
@@ -52,7 +51,7 @@ def main():
         banner("📊 Weekly Review", "Meetings • Tasks • Agenda • Memory | @clawdia")
         results = [run_claude(PROMPT, log_name="weekly-review", timeout=900, agent="clawdia-assistant", daily_output_kind="weekly")]
 
-    sys.exit(1 if summary(results, "Weekly Review" + (" (Team)" if use_team else "")) else 0)
+    summary(results, "Weekly Review" + (" (Team)" if use_team else ""))
 
 if __name__ == "__main__":
     try:

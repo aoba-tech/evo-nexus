@@ -17,7 +17,6 @@ WATCH_PATHS = [
     "workspace",
     "customizations",
     "config-safe",
-    ".claude/agent-memory",
 ]
 
 EXCLUDE_PATHS = [

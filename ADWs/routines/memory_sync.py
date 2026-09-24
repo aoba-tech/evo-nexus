@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """ADW: Memory Sync — Consolidates memory via Clawdia"""
 
-import sys
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from runner import run_claude, banner, summary
@@ -33,7 +32,8 @@ def main():
     banner("🧠 Memory Sync", "Logs • Meetings → Memory | @clawdia")
     results = []
     results.append(run_claude(PROMPT, log_name="memory-sync", timeout=600, agent="clawdia-assistant", daily_output_kind="memory-sync"))
-    sys.exit(1 if summary(results, "Memory Sync") else 0)
+    summary(results, "Memory Sync")
+
 if __name__ == "__main__":
     try:
         main()
