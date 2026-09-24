@@ -76,3 +76,15 @@ Referência: `aoba-tech/evo-nexus:develop` em `fe15fd5`, idêntica à `evolution
 3. [ ] Criar correção específica para terminal/Hub/Swarm (#113), com autenticação WebSocket que falhe fechada e teste da porta 32352; manter fora dos PRs #2/#3.
 4. [ ] Investigar #98, #82, #132/#134 e os commits de scheduler/backup do fork, com reprodução na baseline.
 5. [ ] Reclassificar itens conforme resultados: `confirmado` → PR isolado → teste → revisão de segurança → merge.
+
+## 5. Diagnóstico prioritário: painel de custos em zero ou vazio
+
+A reclamação de custos sem valores tem **mais de uma causa possível** na `develop`:
+
+- [ ] **API retorna zero cedo demais:** `dashboard/backend/routes/costs.py:18-25` retorna zero se `ADWs/logs/metrics.json` falta ou tem JSON inválido, **antes** de consultar `heartbeat_runs`. Reproduzir sem metrics.json e com uma linha de heartbeat de custo conhecido; corrigir a agregação para ler as fontes independentemente. Não localizamos PR comunitário que resolva esse caso.
+- [ ] **Heartbeats gravam custo nulo:** `heartbeat_runner.py` atribui `cost_usd: None` à execução CLI. O [PR upstream #82](https://github.com/evolution-foundation/evo-nexus/pull/82) extrai `total_cost_usd` e tokens da saída JSON do Claude. Extrair apenas o patch do runner (o PR carrega alterações incidentais de licença/README), testar com saída real e variante inválida.
+- [ ] **Página inteira quebra com entrada antiga de imagem:** `Costs.tsx` usa `e.token_usage.total_tokens` sem guarda. O [commit afda74ce](https://github.com/sistemabritto/omni-nexus/commit/afda74ce0dfceda473f54cb5ad2450f67f570a20) normaliza entradas antigas sem token_usage. Aplicar se houver erro JS/TypeError ou dados de imagem legados; ele não corrige totais zerados da API.
+- [ ] **Custos de chat não entram no total:** `chat-bridge.js` recebe `total_cost_usd` e `usage`, mas `/api/costs` agrega apenas metrics.json de ADWs, heartbeat_runs e custos de imagens na UI. Confirmar expectativa de produto, persistência e fonte de custo do chat antes de abrir uma feature de contabilização. Não chamar isso de fix de renderização.
+- [ ] **Estado da instalação:** conferir `/api/costs`, `/api/routines/image-costs`, presença/validade de `ADWs/logs/metrics.json`, uma linha de `heartbeat_runs` e erros do console. Isso separa dados ausentes de página quebrada sem expor chaves ou conteúdo de sessões.
+
+**Prioridade:** reproduzir o retorno precoce e importar o fix do #82 em PR pequeno; o patch visual do fork é independente e só entra se a página estiver quebrando com entradas antigas.
