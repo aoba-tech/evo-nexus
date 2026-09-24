@@ -1,7 +1,5 @@
 """Brain Repo — Secret scanner for pre-commit security checks."""
 
-from __future__ import annotations
-
 import logging
 import re
 from pathlib import Path
