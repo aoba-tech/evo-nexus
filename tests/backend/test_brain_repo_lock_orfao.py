@@ -66,6 +66,13 @@ def test_lock_recente_e_respeitado(repo):
     assert lock.exists(), "removeu um lock que podia estar em uso"
 
 
+def test_lock_antigo_com_conteudo_e_respeitado(repo):
+    lock = _lock(repo, idade_segundos=3600)
+    lock.write_bytes(b"git index em construcao")
+    assert git_ops.limpar_lock_orfao(repo) is False
+    assert lock.exists()
+
+
 def test_sem_lock_nao_faz_nada(repo):
     assert git_ops.limpar_lock_orfao(repo) is False
 
