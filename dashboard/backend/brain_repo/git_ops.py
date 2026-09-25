@@ -2,11 +2,13 @@
 
 import logging
 import subprocess
+import time
 from pathlib import Path
 
 log = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 60  # seconds
+STALE_LOCK_SECONDS = 300
 
 
 def _masked_url(url: str, token: str) -> str:
@@ -25,6 +27,20 @@ def _run(cmd: list[str], cwd: Path | None = None, timeout: int = DEFAULT_TIMEOUT
         text=True,
         timeout=timeout,
     )
+
+
+def limpar_lock_orfao(repo_dir: Path, idade_minima: int = STALE_LOCK_SECONDS) -> bool:
+    """Remove an old, empty index lock left by an interrupted Git operation."""
+    lock = repo_dir / ".git" / "index.lock"
+    try:
+        stat = lock.stat()
+        if stat.st_size != 0 or time.time() - stat.st_mtime < idade_minima:
+            return False
+        lock.unlink()
+    except OSError:
+        return False
+    log.warning("Removed stale, empty Git index lock in %s", repo_dir)
+    return True
 
 
 def clone(url: str, token: str, target: Path) -> None:
@@ -57,6 +73,9 @@ def commit_all(repo_dir: Path, message: str) -> bool:
     changes), True on success, raises RuntimeError on other failures.
     """
     add_result = _run(["git", "add", "-A"], cwd=repo_dir)
+    if add_result.returncode != 0 and "index.lock" in add_result.stderr:
+        if limpar_lock_orfao(repo_dir):
+            add_result = _run(["git", "add", "-A"], cwd=repo_dir)
     if add_result.returncode != 0:
         raise RuntimeError(
             f"git add -A failed (exit {add_result.returncode}): "
